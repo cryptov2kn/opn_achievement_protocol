@@ -141,3 +141,20 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Foundry
+contracts/cache/
+contracts/broadcast/
+contracts/out/
+
+# Foundry local env
+contracts/.env
+contracts/.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
