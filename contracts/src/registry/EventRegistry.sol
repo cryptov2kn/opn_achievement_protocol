@@ -139,4 +139,8 @@ contract EventRegistry {
     function isPublished(uint256 eventId) external view returns (bool) {
         return events[eventId].status == EventStatus.Published;
     }
+
+    function getEvent(uint256 id) external view returns (Event memory) {
+        return events[id];
+    }
 }

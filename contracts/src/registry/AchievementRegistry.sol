@@ -152,4 +152,31 @@ contract AchievementRegistry {
     ) external view returns (uint256[] memory) {
         return eventAchievements[_eventId];
     }
+
+    function getAchievementIssuer(
+        uint256 achievementId
+    ) external view returns (address) {
+        return achievements[achievementId].issuer;
+    }
+
+    function isPublished(uint256 achievementId) external view returns (bool) {
+        return
+            achievements[achievementId].status == AchievementStatus.Published;
+    }
+
+    function isArchived(uint256 achievementId) external view returns (bool) {
+        return achievements[achievementId].status == AchievementStatus.Archived;
+    }
+
+    function getMetadataURI(
+        uint256 achievementId
+    ) external view returns (string memory) {
+        return achievements[achievementId].metadataURI;
+    }
+
+    function getAchievement(
+        uint256 id
+    ) external view returns (Achievement memory) {
+        return achievements[id];
+    }
 }
