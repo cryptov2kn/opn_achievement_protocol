@@ -131,4 +131,12 @@ contract EventRegistry {
 
         emit EventArchived(_eventId);
     }
+
+    function getEventIssuer(uint256 eventId) external view returns (address) {
+        return events[eventId].issuer;
+    }
+
+    function isPublished(uint256 eventId) external view returns (bool) {
+        return events[eventId].status == EventStatus.Published;
+    }
 }
