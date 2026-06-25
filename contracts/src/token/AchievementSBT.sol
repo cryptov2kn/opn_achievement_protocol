@@ -89,22 +89,6 @@ contract AchievementSBT is ERC721, Ownable {
         emit CredentialRevoked(_tokenId);
     }
 
-    /*function transferFrom(address, address, uint256) public pure override {
-        revert("Soulbound");
-    }
-
-    function safeTransferFrom(address, address, uint256) public pure override {
-        revert("Soulbound");
-    }
-
-    function safeTransferFrom(
-        address,
-        address,
-        uint256,
-        bytes memory
-    ) public pure override {
-        revert("Soulbound");
-    }*/
     function _update(
         address to,
         uint256 tokenId,
@@ -175,5 +159,9 @@ contract AchievementSBT is ERC721, Ownable {
         }
 
         return result;
+    }
+
+    function isCredentialActive(uint256 tokenId) external view returns (bool) {
+        return credentials[tokenId].active;
     }
 }
