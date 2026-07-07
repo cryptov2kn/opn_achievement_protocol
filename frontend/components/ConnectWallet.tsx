@@ -11,16 +11,51 @@ export default function ConnectWallet() {
         openConnectModal,
         openAccountModal,
         openChainModal,
+        mounted,
+        authenticationStatus,
       }) => {
-        // Chưa kết nối ví
-        if (!account) {
+        const ready = mounted && authenticationStatus !== "loading";
+
+        const connected =
+          ready &&
+          !!account &&
+          !!chain &&
+          (!authenticationStatus || authenticationStatus === "authenticated");
+        // Chưa mount xong
+        if (!ready) {
+          return (
+            <div
+              className="
+       h-11
+       md:h-12
+
+       w-[150px]
+       md:w-[170px]
+       rounded-2xl
+       bg-zinc-900/60
+       animate-pulse
+      "
+            />
+          );
+        }
+
+        // Chưa kết nối
+        if (!connected) {
           return (
             <button
               onClick={openConnectModal}
               className="
-                h-12
-                px-6
-                rounded-2xl
+                h-11
+                md:h-12
+
+                px-4
+                md:px-6
+
+                rounded-xl
+                md:rounded-2xl
+
+                text-sm
+                md:text-base
                 border border-violet-400/50
                 bg-violet-600
                 hover:bg-violet-500
@@ -43,9 +78,17 @@ export default function ConnectWallet() {
             <button
               onClick={openChainModal}
               className="
-                h-12
-                px-6
-                rounded-2xl
+                h-11
+                md:h-12
+
+                px-4
+                md:px-6
+
+                rounded-xl
+                md:rounded-2xl
+
+                text-sm
+                md:text-base
                 bg-red-500
                 hover:bg-red-400
                 hover:scale-105
@@ -65,8 +108,15 @@ export default function ConnectWallet() {
           <button
             onClick={openAccountModal}
             className="
-              h-12
-              px-5
+              h-11
+              md:h-12
+
+              px-4
+              md:px-5
+
+              max-w-[180px]
+              lg:max-w-[220px]
+              truncate
               rounded-2xl
               border border-violet-500/40
               bg-black/40
@@ -77,7 +127,7 @@ export default function ConnectWallet() {
               hover:shadow-violet-500/40
               hover:border-violet-400
               hover:bg-violet-500/10
-              hover:scale-105
+              hover:-translate-y-0.5
               transition-all duration-300
             "
           >

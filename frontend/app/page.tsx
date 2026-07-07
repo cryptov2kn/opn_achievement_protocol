@@ -4,7 +4,7 @@ import Stats from "@/components/Stats";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="min-h-screen bg-[#0b0b0d] overflow-x-hidden">
       <Navbar />
 
       <Hero />

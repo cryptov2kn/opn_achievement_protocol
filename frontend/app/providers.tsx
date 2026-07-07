@@ -7,6 +7,7 @@ import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 
 import { config } from "@/lib/wagmi";
+import RouteGuard from "@/components/RouteGuard";
 import { useState } from "react";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -25,7 +26,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             overlayBlur: "small",
           })}
         >
-          {children}
+          <RouteGuard>{children}</RouteGuard>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
