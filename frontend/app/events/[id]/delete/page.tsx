@@ -4,19 +4,16 @@ import { useRouter } from "next/navigation";
 import { use } from "react";
 
 import Sidebar from "@/components/dashboard/Sidebar";
+import DeleteEventContent from "@/components/event/DeleteEventContent";
 import DashboardContent from "@/components/layout/DashboardContent";
 import DashboardLoading from "@/components/layout/DashboardLoading";
 
-import ArchiveAchievementContent from "@/components/achievement/ArchiveAchievementContent";
-
 import DataState from "@/components/ui/DataState";
-
-import { useAchievementDetail } from "@/hooks/achievement/useAchievementDetail";
-import { useNotification } from "@/hooks/common/useNotification";
-import { useWallet } from "@/hooks/useWallet";
-
 import PageBreadcrumb from "@/components/ui/PageBreadcrumb";
-import { archiveAchievement } from "@/lib/achievement/archiveAchievement";
+import { useNotification } from "@/hooks/common/useNotification";
+import { useEventDetail } from "@/hooks/event/useEventDetail";
+import { useWallet } from "@/hooks/useWallet";
+import { deleteEvent } from "@/lib/event/deleteEvent";
 
 interface Props {
   params: Promise<{
@@ -24,7 +21,7 @@ interface Props {
   }>;
 }
 
-export default function ArchiveAchievementPage({ params }: Props) {
+export default function DeleteEventPage({ params }: Props) {
   const { id } = use(params);
 
   const router = useRouter();
@@ -33,43 +30,42 @@ export default function ArchiveAchievementPage({ params }: Props) {
 
   const { address, isConnected } = useWallet();
 
-  const { achievement, loading } = useAchievementDetail(id);
+  const { event, loading } = useEventDetail(id);
 
-  async function handleArchive() {
+  async function handleDelete() {
     if (!isConnected || !address) {
       notify.warning("Please connect your wallet first.");
       return;
     }
 
     try {
-      const result = await archiveAchievement(id, address);
+      const result = await deleteEvent(id, address);
 
       if (!result.success) {
         notify.error(result.error);
         return;
       }
 
-      notify.success("Achievement archived successfully.");
+      notify.success("Event deleted successfully.");
 
       setTimeout(() => {
-        router.replace(`/achievements/${id}`);
+        router.replace("/events/list");
       }, 800);
     } catch (error) {
       console.error(error);
-
       notify.error("Something went wrong.");
     }
   }
 
-  function handleCancel() {
+  /*function handleCancel() {
     router.back();
-  }
+  }*/
 
   if (loading) {
-    return <DashboardLoading text="Loading achievement..." />;
+    return <DashboardLoading text="Loading event..." />;
   }
 
-  if (!achievement) {
+  if (!event) {
     return (
       <main className="flex min-h-screen bg-[#0b0b0d] text-white">
         <Sidebar />
@@ -79,25 +75,25 @@ export default function ArchiveAchievementPage({ params }: Props) {
             <PageBreadcrumb
               items={[
                 {
-                  label: "Achievement List",
-                  href: "/achievements/list",
+                  label: "Event List",
+                  href: "/events/list",
                 },
                 {
                   label: "Detail",
-                  href: `/achievements/${id}`,
+                  href: `/events/${id}`,
                 },
                 {
-                  label: "Archive",
+                  label: "Delete",
                 },
               ]}
             />
           }
         >
           <DataState
-            title="Achievement not found"
-            description="The achievement may have been deleted or does not exist."
+            title="Event not found"
+            description="The event may have been deleted or does not exist."
             buttonText="Back to List"
-            onButtonClick={() => router.replace("/achievements/list")}
+            onButtonClick={() => router.replace("/events/list")}
           />
         </DashboardContent>
       </main>
@@ -113,24 +109,24 @@ export default function ArchiveAchievementPage({ params }: Props) {
           <PageBreadcrumb
             items={[
               {
-                label: "Achievement List",
-                href: "/achievements/list",
+                label: "Event List",
+                href: "/events/list",
               },
               {
                 label: "Detail",
-                href: `/achievements/${id}`,
+                href: `/events/${id}`,
               },
               {
-                label: "Archive",
+                label: "Delete",
               },
             ]}
           />
         }
       >
-        <ArchiveAchievementContent
-          achievement={achievement}
-          onArchive={handleArchive}
-          onCancel={handleCancel}
+        <DeleteEventContent
+          event={event}
+          onDelete={handleDelete}
+          onCancel={() => router.back()}
         />
       </DashboardContent>
     </main>

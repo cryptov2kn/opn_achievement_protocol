@@ -13,6 +13,7 @@ import { useAchievementDetail } from "@/hooks/achievement/useAchievementDetail";
 import { achievementToForm } from "@/lib/achievement/achievementToForm";
 
 import DashboardLoading from "@/components/layout/DashboardLoading";
+import PageBreadcrumb from "@/components/ui/PageBreadcrumb";
 import { useNotification } from "@/hooks/common/useNotification";
 import { useWallet } from "@/hooks/useWallet";
 import { updateAchievement } from "@/lib/achievement/updateAchievement";
@@ -123,8 +124,25 @@ export default function EditAchievementPage({ params }: Props) {
     return (
       <main className="flex min-h-screen bg-[#0b0b0d] text-white">
         <Sidebar />
-
-        <DashboardContent>
+        <DashboardContent
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                {
+                  label: "Achievement List",
+                  href: "/achievements/list",
+                },
+                {
+                  label: "Detail",
+                  href: `/achievements/${id}`,
+                },
+                {
+                  label: "Edit",
+                },
+              ]}
+            />
+          }
+        >
           <DataState
             title="Achievement Archived"
             description="Archived achievements cannot be edited. Restore it first if you want to make changes."
@@ -139,7 +157,25 @@ export default function EditAchievementPage({ params }: Props) {
   return (
     <main className="flex min-h-screen bg-[#0b0b0d] text-white">
       <Sidebar />
-      <DashboardContent>
+      <DashboardContent
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              {
+                label: "Achievement List",
+                href: "/achievements/list",
+              },
+              {
+                label: "Detail",
+                href: `/achievements/${id}`,
+              },
+              {
+                label: "Edit",
+              },
+            ]}
+          />
+        }
+      >
         <AchievementEditForm
           form={form}
           setForm={setForm}

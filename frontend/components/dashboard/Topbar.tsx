@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { ReactNode } from "react";
 
 import SearchBar from "./SearchBar";
 import WalletMenu from "./WalletMenu";
@@ -9,9 +10,10 @@ import { useSearch } from "@/providers/SearchProvider";
 
 interface Props {
   showSearch?: boolean;
+  breadcrumb?: ReactNode;
 }
 
-export default function Topbar({ showSearch = false }: Props) {
+export default function Topbar({ showSearch = false, breadcrumb }: Props) {
   const pathname = usePathname();
 
   const { search, setSearch } = useSearch();
@@ -35,7 +37,7 @@ export default function Topbar({ showSearch = false }: Props) {
           onChange={setSearch}
         />
       ) : (
-        <div />
+        (breadcrumb ?? <div />)
       )}
 
       <WalletMenu />

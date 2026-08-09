@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { use } from "react";
 
+import DeleteAchievementContent from "@/components/achievement/DeleteAchievementContent";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardContent from "@/components/layout/DashboardContent";
 import DashboardLoading from "@/components/layout/DashboardLoading";
-
-import DeleteAchievementContent from "@/components/achievement/DeleteAchievementContent";
-
 import DataState from "@/components/ui/DataState";
+
+import PageBreadcrumb from "@/components/ui/PageBreadcrumb";
+
 import { useAchievementDetail } from "@/hooks/achievement/useAchievementDetail";
 import { useNotification } from "@/hooks/common/useNotification";
 import { useWallet } from "@/hooks/useWallet";
@@ -70,7 +71,25 @@ export default function DeleteAchievementPage({ params }: Props) {
       <main className="flex min-h-screen bg-[#0b0b0d] text-white">
         <Sidebar />
 
-        <DashboardContent>
+        <DashboardContent
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                {
+                  label: "Achievement List",
+                  href: "/achievements/list",
+                },
+                {
+                  label: "Detail",
+                  href: `/achievements/${id}`,
+                },
+                {
+                  label: "Delete",
+                },
+              ]}
+            />
+          }
+        >
           <DataState
             title="Achievement not found"
             description="The achievement may have been deleted or does not exist."
@@ -86,7 +105,25 @@ export default function DeleteAchievementPage({ params }: Props) {
     <main className="flex min-h-screen bg-[#0b0b0d] text-white">
       <Sidebar />
 
-      <DashboardContent>
+      <DashboardContent
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              {
+                label: "Achievement List",
+                href: "/achievements/list",
+              },
+              {
+                label: "Detail",
+                href: `/achievements/${id}`,
+              },
+              {
+                label: "Delete",
+              },
+            ]}
+          />
+        }
+      >
         <DeleteAchievementContent
           achievement={achievement}
           onDelete={handleDelete}

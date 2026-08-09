@@ -3,14 +3,13 @@
 import { useRouter } from "next/navigation";
 import { use } from "react";
 
+import RestoreAchievementContent from "@/components/achievement/RestoreAchievementContent";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardContent from "@/components/layout/DashboardContent";
 import DashboardLoading from "@/components/layout/DashboardLoading";
-
-import RestoreAchievementContent from "@/components/achievement/RestoreAchievementContent";
-
 import DataState from "@/components/ui/DataState";
 
+import PageBreadcrumb from "@/components/ui/PageBreadcrumb";
 import { useAchievementDetail } from "@/hooks/achievement/useAchievementDetail";
 import { useNotification } from "@/hooks/common/useNotification";
 import { useWallet } from "@/hooks/useWallet";
@@ -75,7 +74,25 @@ export default function RestoreAchievementPage({ params }: Props) {
       <main className="flex min-h-screen bg-[#0b0b0d] text-white">
         <Sidebar />
 
-        <DashboardContent>
+        <DashboardContent
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                {
+                  label: "Achievement List",
+                  href: "/achievements/list",
+                },
+                {
+                  label: "Detail",
+                  href: `/achievements/${id}`,
+                },
+                {
+                  label: "Restore",
+                },
+              ]}
+            />
+          }
+        >
           <DataState
             title="Achievement not found"
             description="The achievement may have been deleted or does not exist."
@@ -91,7 +108,25 @@ export default function RestoreAchievementPage({ params }: Props) {
     <main className="flex min-h-screen bg-[#0b0b0d] text-white">
       <Sidebar />
 
-      <DashboardContent>
+      <DashboardContent
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              {
+                label: "Achievement List",
+                href: "/achievements/list",
+              },
+              {
+                label: "Detail",
+                href: `/achievements/${id}`,
+              },
+              {
+                label: "Restore",
+              },
+            ]}
+          />
+        }
+      >
         <RestoreAchievementContent
           achievement={achievement}
           onRestore={handleRestore}
