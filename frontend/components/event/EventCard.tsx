@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "@/components/ui/Button";
+import { formatEventTime } from "@/lib/event/formatEventTime";
 import { getEventStatus } from "@/lib/event/getEventStatus";
 import { Event } from "@/types/event";
 import { clsx } from "clsx";
@@ -34,6 +35,12 @@ export default function EventCard({ event }: Props) {
 
   const badge = STATUS_BADGES[status];
 
+  const eventTime = formatEventTime(
+    event.start_at,
+    event.end_at,
+    event.timezone,
+  );
+
   return (
     <div
       onClick={() => router.push(`/events/${event.id}`)}
@@ -50,11 +57,11 @@ export default function EventCard({ event }: Props) {
           {badge.label}
         </div>
 
-        {event.achievement?.image ? (
+        {event.image ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={event.achievement.image}
-            alt={event.title}
+            src={event.image}
+            alt={event.title || "Event Image"}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -99,13 +106,20 @@ export default function EventCard({ event }: Props) {
           </span>
         </div>
 
+        {/* Points */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <span className="text-sm">⭐</span>
+
+          <span className="font-bold text-amber-400">
+            {event.points ?? 0} Points
+          </span>
+        </div>
+
         {/* Date */}
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-500">
           <CalendarDays className="h-5 w-5" />
 
-          <span>
-            {event.start_date} → {event.end_date}
-          </span>
+          <span>{eventTime.date}</span>
         </div>
 
         {/* Action */}

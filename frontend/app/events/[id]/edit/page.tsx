@@ -47,16 +47,51 @@ export default function EditEventPage({ params }: Props) {
   useEffect(() => {
     if (!event) return;
 
+    const timezone =
+      event.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const start = event.start_at ? new Date(event.start_at) : null;
+
+    const end = event.end_at ? new Date(event.end_at) : null;
+
+    const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: timezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
     const nextForm: EventFormData = {
       achievementId: event.achievement_id,
       title: event.title,
       eventType: event.event_type,
-      startDate: event.start_date ? event.start_date.slice(0, 10) : "",
-      endDate: event.end_date ? event.end_date.slice(0, 10) : "",
+
+      startDate: start ? dateFormatter.format(start) : "",
+      endDate: end ? dateFormatter.format(end) : "",
+
+      startTime: start ? timeFormatter.format(start) : "",
+      endTime: end ? timeFormatter.format(end) : "",
+
+      timezone,
+
       maxParticipants:
         event.max_participants !== null ? String(event.max_participants) : "",
+
       location: event.location ?? "",
       description: event.description ?? "",
+
+      points: event.points !== null ? String(event.points) : "",
+
+      participationKeyword: "",
+
+      image: event.image ?? "",
     };
 
     queueMicrotask(() => {

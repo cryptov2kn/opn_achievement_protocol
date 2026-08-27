@@ -6,14 +6,24 @@ export interface EventFormData {
   eventType: "online" | "offline";
 
   startDate: string;
-
   endDate: string;
+
+  startTime: string;
+  endTime: string;
+
+  timezone: string;
 
   maxParticipants: string;
 
   location: string;
 
   description: string;
+
+  points: string;
+
+  participationKeyword: string;
+
+  image: string;
 }
 
 export const eventFormDefault: EventFormData = {
@@ -24,14 +34,24 @@ export const eventFormDefault: EventFormData = {
   eventType: "online",
 
   startDate: "",
-
   endDate: "",
+
+  startTime: "",
+  endTime: "",
+
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
   maxParticipants: "",
 
   location: "",
 
   description: "",
+
+  points: "",
+
+  participationKeyword: "",
+
+  image: "",
 };
 
 import { Achievement } from "./achievement";
@@ -51,18 +71,24 @@ export interface Event {
 
   location: string | null;
 
-  start_date: string | null;
-
-  end_date: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  timezone: string | null;
 
   max_participants: number | null;
 
-  created_at: string;
+  points: number | null;
 
+  image: string | null;
+
+  participation_keyword_hash: string | null;
+  claim_end_at: string | null;
+
+  created_at: string;
   updated_at: string;
 
   achievement: Pick<
     Achievement,
-    "id" | "title" | "image" | "points" | "category" | "difficulty"
+    "id" | "title" | "image" | "category" | "difficulty"
   >;
 }

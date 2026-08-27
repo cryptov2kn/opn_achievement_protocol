@@ -2,69 +2,98 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {AccessControlManager} from "../src/access/AccessControlManager.sol";
 import {IssuerRegistry} from "../src/registry/IssuerRegistry.sol";
 
 contract IssuerRegistryTest is Test {
-    AccessControlManager accessManager;
     IssuerRegistry issuerRegistry;
 
-    address admin = address(1);
-    address issuer = address(2);
+    address issuer = address(0x100);
+    address user = address(0x200);
 
     function setUp() public {
-        vm.prank(admin);
-        accessManager = new AccessControlManager(admin);
-
-        issuerRegistry = new IssuerRegistry(address(accessManager));
+        issuerRegistry = new IssuerRegistry();
     }
 
-    //Test 1 - Register issuer
     function testRegisterIssuer() public {
         vm.prank(issuer);
 
-        issuerRegistry.registerIssuer("OPN Foundation", "ipfs://metadata");
+        issuerRegistry.registerIssuer(
+            "OPN Foundation",
+            "ipfs://issuer"
+        );
 
-        (string memory name, , bool approved, bool exists) = issuerRegistry
-            .issuers(issuer);
+        IssuerRegistry.Issuer memory profile =
+            issuerRegistry.getIssuer(issuer);
 
-        assertEq(keccak256(bytes(name)), keccak256(bytes("OPN Foundation")));
-
-        assertFalse(approved);
-        assertTrue(exists);
+        assertEq(profile.name, "OPN Foundation");
+        assertEq(profile.metadataURI, "ipfs://issuer");
+        assertTrue(profile.exists);
     }
 
-    //Test 2 - Approve issuer
-    function testApproveIssuer() public {
+    function testRegisteredWalletIsIssuer() public {
         vm.prank(issuer);
 
-        issuerRegistry.registerIssuer("OPN Foundation", "ipfs://metadata");
+        issuerRegistry.registerIssuer(
+            "OPN Foundation",
+            "ipfs://issuer"
+        );
 
-        vm.prank(admin);
-
-        issuerRegistry.approveIssuer(issuer);
-
-        bool approved = issuerRegistry.isApprovedIssuer(issuer);
-
-        assertTrue(approved);
+        assertTrue(
+            issuerRegistry.isIssuer(issuer)
+        );
     }
 
-    //Test 3 - Revoke issuer
-    function testRevokeIssuer() public {
+    function testUnregisteredWalletIsNotIssuer() public view {
+        assertFalse(
+            issuerRegistry.isIssuer(user)
+        );
+    }
+
+    function testCannotRegisterTwice() public {
+        vm.startPrank(issuer);
+
+        issuerRegistry.registerIssuer(
+            "OPN Foundation",
+            "ipfs://issuer"
+        );
+
+        vm.expectRevert("Already registered");
+
+        issuerRegistry.registerIssuer(
+            "Another Issuer",
+            "ipfs://another"
+        );
+
+        vm.stopPrank();
+    }
+
+    function testGetIssuerProfile() public {
         vm.prank(issuer);
 
-        issuerRegistry.registerIssuer("OPN Foundation", "ipfs://metadata");
+        issuerRegistry.registerIssuer(
+            "OPN Foundation",
+            "ipfs://metadata"
+        );
 
-        vm.prank(admin);
+        IssuerRegistry.Issuer memory profile =
+            issuerRegistry.getIssuer(issuer);
 
-        issuerRegistry.approveIssuer(issuer);
+        assertEq(
+            profile.name,
+            "OPN Foundation"
+        );
 
-        vm.prank(admin);
+        assertEq(
+            profile.metadataURI,
+            "ipfs://metadata"
+        );
 
-        issuerRegistry.revokeIssuer(issuer);
+        assertTrue(profile.exists);
+    }
 
-        bool approved = issuerRegistry.isApprovedIssuer(issuer);
+    function testGetIssuerRevertsForUnregisteredWallet() public {
+        vm.expectRevert("Issuer not found");
 
-        assertFalse(approved);
+        issuerRegistry.getIssuer(user);
     }
 }

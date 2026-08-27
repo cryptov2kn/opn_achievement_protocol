@@ -20,7 +20,7 @@ export default function EventDetailContent({ event }: Props) {
       title="Event Detail"
       description="View the event information and manage this event."
     >
-      <EventDetailImage image={event.achievement?.image ?? null} />
+      <EventDetailImage image={event.image ?? null} />
 
       <EventDetailHeader event={event} />
 

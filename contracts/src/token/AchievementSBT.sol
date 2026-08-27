@@ -2,166 +2,408 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../registry/AchievementRegistry.sol";
+import "../registry/EventRegistry.sol";
 
-contract AchievementSBT is ERC721, Ownable {
+contract AchievementSBT is ERC721 {
     struct Credential {
         uint256 tokenId;
         uint256 achievementId;
+        uint256 eventId;
         address recipient;
+
+        // Historical point snapshot at mint time.
+        uint256 pointsSnapshot;
+
         bool active;
     }
 
     uint256 public nextTokenId;
 
-    AchievementRegistry public achievementRegistry;
+    AchievementRegistry public immutable achievementRegistry;
+
+    EventRegistry public immutable eventRegistry;
 
     mapping(uint256 => Credential) public credentials;
 
-    mapping(address => uint256[]) public userCredentials;
+    /// @notice recipient => token IDs
+    mapping(address => uint256[]) private userCredentials;
 
-    mapping(uint256 => mapping(address => bool)) public hasCredential;
-
-    constructor(
-        address _achievementRegistry
-    ) ERC721("OPN Achievement", "OPNA") Ownable(msg.sender) {
-        achievementRegistry = AchievementRegistry(_achievementRegistry);
-    }
+    /**
+     * @notice Event ID => recipient => whether a credential
+     * has already been issued.
+     *
+     * This enforces:
+     * Event + User = unique
+     */
+    mapping(uint256 => mapping(address => bool))
+        public hasCredential;
 
     event CredentialMinted(
         uint256 indexed tokenId,
         uint256 indexed achievementId,
-        address indexed recipient
+        uint256 indexed eventId,
+        address recipient,
+        uint256 pointsSnapshot
     );
 
-    event CredentialRevoked(uint256 indexed tokenId);
+    event CredentialRevoked(
+        uint256 indexed tokenId
+    );
 
-    function mint(address _recipient, uint256 _achievementId) external {
+    constructor(
+        address _achievementRegistry,
+        address _eventRegistry
+    )
+        ERC721(
+            "OPN Achievement",
+            "OPNA"
+        )
+    {
         require(
-            achievementRegistry.getAchievementIssuer(_achievementId) ==
-                msg.sender,
-            "Not issuer"
+            _achievementRegistry != address(0),
+            "Invalid achievement registry"
         );
 
         require(
-            achievementRegistry.isPublished(_achievementId),
-            "Achievement not published"
+            _eventRegistry != address(0),
+            "Invalid event registry"
         );
 
-        require(!hasCredential[_achievementId][_recipient], "Already claimed");
+        achievementRegistry = AchievementRegistry(
+            _achievementRegistry
+        );
+
+        eventRegistry = EventRegistry(
+            _eventRegistry
+        );
+    }
+
+    // =============================================================
+    // Mint
+    // =============================================================
+
+    /**
+     * @notice Mint a Credential/SBT for a recipient.
+     *
+     * Current architecture uses the Event issuer as the minting
+     * authority. No role system is introduced.
+     *
+     * Required:
+     * - Event exists and is not deleted
+     * - Event belongs to msg.sender
+     * - Event's achievement matches achievementId
+     * - Achievement is valid
+     * - recipient is not the event creator
+     * - Event + recipient has not been claimed before
+     *
+     * The Event's current points are snapshotted at mint time.
+     */
+    function mint(
+        address recipient,
+        uint256 achievementId,
+        uint256 eventId
+    )
+        external
+    {
+        require(
+            recipient != address(0),
+            "Invalid recipient"
+        );
+
+        require(
+            eventRegistry.isValidEvent(eventId),
+            "Event not valid"
+        );
+
+        require(
+            eventRegistry.isEventOwner(
+                eventId,
+                msg.sender
+            ),
+            "Not event issuer"
+        );
+
+        uint256 linkedAchievementId =
+            eventRegistry.getEventAchievement(
+                eventId
+            );
+
+        require(
+            linkedAchievementId == achievementId,
+            "Achievement mismatch"
+        );
+
+        require(
+            achievementRegistry.isAchievementOwner(
+                achievementId,
+                msg.sender
+            ),
+            "Not achievement owner"
+        );
+
+        require(
+            !achievementRegistry.isDeleted(
+                achievementId
+            ),
+            "Achievement deleted"
+        );
+
+        require(
+            !achievementRegistry.isArchived(
+                achievementId
+            ),
+            "Achievement archived"
+        );
+
+        /**
+         * The event issuer cannot receive a credential from
+         * their own event.
+         *
+         * This enforces the anti-self-farming invariant at the
+         * credential layer even though Join/Complete itself lives
+         * outside the core contracts.
+         */
+        require(
+            recipient != msg.sender,
+            "Issuer cannot receive own event credential"
+        );
+
+        require(
+            !hasCredential[eventId][recipient],
+            "Already claimed"
+        );
 
         uint256 tokenId = nextTokenId;
 
-        _safeMint(_recipient, tokenId);
+        uint256 pointsSnapshot =
+            eventRegistry.getEventPoints(
+                eventId
+            );
+
+        _safeMint(
+            recipient,
+            tokenId
+        );
 
         credentials[tokenId] = Credential({
             tokenId: tokenId,
-            achievementId: _achievementId,
-            recipient: _recipient,
+            achievementId: achievementId,
+            eventId: eventId,
+            recipient: recipient,
+            pointsSnapshot: pointsSnapshot,
             active: true
         });
 
-        userCredentials[_recipient].push(tokenId);
+        userCredentials[recipient].push(
+            tokenId
+        );
 
-        hasCredential[_achievementId][_recipient] = true;
+        hasCredential[eventId][recipient] = true;
 
         nextTokenId++;
 
-        emit CredentialMinted(tokenId, _achievementId, _recipient);
+        emit CredentialMinted(
+            tokenId,
+            achievementId,
+            eventId,
+            recipient,
+            pointsSnapshot
+        );
     }
 
-    function revoke(uint256 _tokenId) external {
-        Credential storage credential = credentials[_tokenId];
+    // =============================================================
+    // Revoke
+    // =============================================================
 
-        require(credential.active, "Already revoked");
+    /**
+     * @notice Revoke an active Credential.
+     *
+     * Credential remains minted.
+     * Token ownership remains unchanged.
+     * Historical data remains unchanged.
+     */
+    function revoke(
+        uint256 tokenId
+    )
+        external
+    {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "Credential not found"
+        );
+
+        Credential storage credential =
+            credentials[tokenId];
 
         require(
-            achievementRegistry.getAchievementIssuer(
-                credential.achievementId
-            ) == msg.sender,
-            "Not issuer"
+            credential.active,
+            "Already revoked"
+        );
+
+        require(
+            eventRegistry.isEventOwner(
+                credential.eventId,
+                msg.sender
+            ),
+            "Not event issuer"
         );
 
         credential.active = false;
 
-        emit CredentialRevoked(_tokenId);
+        emit CredentialRevoked(
+            tokenId
+        );
     }
 
+    // =============================================================
+    // Soulbound
+    // =============================================================
+
+    /**
+     * @notice Block all transfers between two non-zero addresses.
+     *
+     * Mint:
+     * address(0) -> recipient   allowed
+     *
+     * Transfer:
+     * recipient -> another user forbidden
+     *
+     * This contract does not implement a burn flow.
+     */
     function _update(
         address to,
         uint256 tokenId,
         address auth
-    ) internal override returns (address) {
+    )
+        internal
+        override
+        returns (address)
+    {
         address from = _ownerOf(tokenId);
 
-        if (from != address(0) && to != address(0)) {
+        if (
+            from != address(0) &&
+            to != address(0)
+        ) {
             revert("Soulbound");
         }
 
-        return super._update(to, tokenId, auth);
+        return super._update(
+            to,
+            tokenId,
+            auth
+        );
     }
 
+    // =============================================================
+    // Metadata
+    // =============================================================
+
+    /**
+     * @notice Use the Achievement metadata as the credential's
+     * base token metadata.
+     *
+     * The Credential itself additionally stores Event and point
+     * snapshot data on-chain.
+     */
     function tokenURI(
         uint256 tokenId
-    ) public view override returns (string memory) {
-        return
-            achievementRegistry.getMetadataURI(
+    )
+        public
+        view
+        override
+        returns (string memory)
+    {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "Credential not found"
+        );
+
+        return achievementRegistry
+            .getAchievementMetadataURI(
                 credentials[tokenId].achievementId
             );
     }
 
+    // =============================================================
+    // Credential getters
+    // =============================================================
+
+    function getCredential(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (Credential memory)
+    {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "Credential not found"
+        );
+
+        return credentials[tokenId];
+    }
+
     function getUserCredentials(
         address user
-    ) external view returns (uint256[] memory) {
+    )
+        external
+        view
+        returns (uint256[] memory)
+    {
         return userCredentials[user];
     }
 
-    function getActiveCredentialCount(
-        address user
-    ) external view returns (uint256) {
-        uint256[] memory ids = userCredentials[user];
+    function isCredentialActive(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (bool)
+    {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "Credential not found"
+        );
 
-        uint256 count;
-
-        for (uint256 i; i < ids.length; i++) {
-            if (credentials[ids[i]].active) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    function getActiveCredentials(
-        address user
-    ) external view returns (uint256[] memory) {
-        uint256[] memory ids = userCredentials[user];
-
-        uint256 activeCount;
-
-        for (uint256 i; i < ids.length; i++) {
-            if (credentials[ids[i]].active) {
-                activeCount++;
-            }
-        }
-
-        uint256[] memory result = new uint256[](activeCount);
-
-        uint256 index;
-
-        for (uint256 i; i < ids.length; i++) {
-            if (credentials[ids[i]].active) {
-                result[index] = ids[i];
-                index++;
-            }
-        }
-
-        return result;
-    }
-
-    function isCredentialActive(uint256 tokenId) external view returns (bool) {
         return credentials[tokenId].active;
+    }
+
+    function getPointSnapshot(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (uint256)
+    {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "Credential not found"
+        );
+
+        return credentials[tokenId].pointsSnapshot;
+    }
+
+    function credentialExistsForEventRecipient(
+        uint256 eventId,
+        address recipient
+    )
+        external
+        view
+        returns (bool)
+    {
+        return hasCredential[eventId][recipient];
+    }
+
+    function getUserCredentialCount(
+        address user
+    )
+        external
+        view
+        returns (uint256)
+    {
+        return userCredentials[user].length;
     }
 }

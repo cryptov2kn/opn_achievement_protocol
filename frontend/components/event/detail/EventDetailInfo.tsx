@@ -1,4 +1,5 @@
 import { Event } from "@/types/event";
+import { DateTime } from "luxon";
 import EventDetailStat from "./EventDetailStat";
 
 interface Props {
@@ -6,6 +7,32 @@ interface Props {
 }
 
 export default function EventDetailInfo({ event }: Props) {
+  const startDateTime = event.start_at
+    ? DateTime.fromISO(event.start_at).toLocal()
+    : null;
+
+  const endDateTime = event.end_at
+    ? DateTime.fromISO(event.end_at).toLocal()
+    : null;
+
+  function formatDateTime(dateTime: DateTime | null) {
+    if (!dateTime) {
+      return {
+        date: "-",
+        time: "-",
+        offset: "",
+      };
+    }
+
+    return {
+      date: dateTime.toFormat("MMM dd, yyyy"),
+      time: dateTime.toFormat("HH:mm"),
+      offset: `UTC${dateTime.toFormat("ZZ").slice(0, 3)}`,
+    };
+  }
+
+  const start = formatDateTime(startDateTime);
+  const end = formatDateTime(endDateTime);
   return (
     <>
       {/* Description */}
@@ -24,7 +51,7 @@ export default function EventDetailInfo({ event }: Props) {
       </section>
 
       {/* Stats */}
-      <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+      <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-4">
         <EventDetailStat
           icon="👥"
           title="Participants"
@@ -32,30 +59,38 @@ export default function EventDetailInfo({ event }: Props) {
         />
 
         <EventDetailStat
+          icon="⭐"
+          title="Points"
+          value={`${event.points ?? 0} pts`}
+        />
+
+        <EventDetailStat
           icon="📅"
-          title="Start Date"
+          title="Start"
           value={
-            event.start_date
-              ? new Date(event.start_date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "-"
+            <div>
+              <div>{start.date}</div>
+
+              <div className="mt-1 text-sm font-normal text-zinc-400">
+                {start.time}
+                {start.offset && ` (${start.offset})`}
+              </div>
+            </div>
           }
         />
 
         <EventDetailStat
           icon="🏁"
-          title="End Date"
+          title="End"
           value={
-            event.end_date
-              ? new Date(event.end_date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "-"
+            <div>
+              <div>{end.date}</div>
+
+              <div className="mt-1 text-sm font-normal text-zinc-400">
+                {end.time}
+                {end.offset && ` (${end.offset})`}
+              </div>
+            </div>
           }
         />
       </section>

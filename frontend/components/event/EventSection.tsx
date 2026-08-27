@@ -97,6 +97,10 @@ export default function EventSection() {
                 label: "Oldest",
                 value: "oldest",
               },
+              {
+                label: "Highest Points",
+                value: "points",
+              },
 
               {
                 divider: true,

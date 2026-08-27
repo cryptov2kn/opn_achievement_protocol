@@ -81,19 +81,18 @@ export default function AchievementCard({ achievement }: Props) {
           </span>
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <span className="text-md">⭐</span>
-
-          <span className="text-md font-bold text-amber-400">
-            {achievement.points ?? 0} pts
-          </span>
-        </div>
-
         {/* Date */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-500">
-          <CalendarDays className="h-5 w-5" />
+        <div className="text-md mt-4 flex items-center justify-center gap-2 text-teal-500">
+          <CalendarDays className="h-5 w-5 text-yellow-600" />
 
-          <span>{new Date(achievement.created_at).toLocaleDateString()}</span>
+          <span>
+            Created{" "}
+            {new Date(achievement.created_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
         </div>
 
         {/* Action */}

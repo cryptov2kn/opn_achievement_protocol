@@ -13,7 +13,6 @@ export async function POST(request: Request) {
       difficulty,
       description,
       image,
-      points,
       expiration,
       metadata,
     } = body;
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
         difficulty,
         description,
         image,
-        points: points ? Number(points) : null,
         expiration: expiration || null,
         metadata: metadata
           ? {

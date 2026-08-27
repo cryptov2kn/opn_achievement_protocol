@@ -22,6 +22,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import ComingSoonDialog from "../ui/ComingSoonDialog";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -36,6 +37,10 @@ export default function Sidebar() {
   };
 
   const [openMenu, setOpenMenu] = useState(getCurrentMenu);
+
+  const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(
+    null,
+  );
 
   const currentMenu = getCurrentMenu();
 
@@ -52,13 +57,13 @@ export default function Sidebar() {
         },
         {
           text: "Analytics",
-          href: "/dashboard/analytics",
           icon: <BarChart3 size={16} />,
+          onClick: () => setComingSoonFeature("Analytics"),
         },
         {
           text: "Activity",
-          href: "/dashboard/activity",
           icon: <Activity size={16} />,
+          onClick: () => setComingSoonFeature("Activity"),
         },
       ],
     },
@@ -69,7 +74,7 @@ export default function Sidebar() {
       icon: <Building2 size={18} />,
       children: [
         {
-          text: "Register Issuer",
+          text: "Create Issuer Profile",
           href: "/issuer/register",
           icon: <PlusCircle size={16} />,
         },
@@ -80,13 +85,13 @@ export default function Sidebar() {
         },
         {
           text: "Team Members",
-          href: "/issuer/team",
           icon: <Users size={16} />,
+          onClick: () => setComingSoonFeature("Team Members"),
         },
         {
           text: "Verification",
-          href: "/issuer/verification",
           icon: <ShieldCheck size={16} />,
+          onClick: () => setComingSoonFeature("Verification"),
         },
       ],
     },
@@ -115,7 +120,7 @@ export default function Sidebar() {
       icon: <Calendar size={18} />,
       children: [
         {
-          text: "All Events",
+          text: "Events List",
           href: "/events/list",
           icon: <Calendar size={16} />,
         },
@@ -133,14 +138,9 @@ export default function Sidebar() {
       icon: <BadgeCheck size={18} />,
       children: [
         {
-          text: "Issued Credentials",
-          href: "/credentials",
+          text: "Credential List",
+          href: "/credentials/list",
           icon: <FileBadge2 size={16} />,
-        },
-        {
-          text: "Issue Credential",
-          href: "/credentials/issue",
-          icon: <PlusCircle size={16} />,
         },
       ],
     },
@@ -184,11 +184,12 @@ export default function Sidebar() {
               <div className="mt-2 mb-3 ml-4 flex flex-col gap-1.5 border-l border-zinc-800 pl-2.5">
                 {group.children.map((item) => (
                   <SidebarItem
-                    key={item.href}
+                    key={item.text}
                     icon={item.icon}
                     text={item.text}
                     href={item.href}
                     active={pathname === item.href}
+                    onClick={item.onClick}
                   />
                 ))}
               </div>
@@ -205,6 +206,12 @@ export default function Sidebar() {
           active={pathname === "/settings"}
         />
       </div>
+
+      <ComingSoonDialog
+        open={comingSoonFeature !== null}
+        featureName={comingSoonFeature ?? ""}
+        onClose={() => setComingSoonFeature(null)}
+      />
     </aside>
   );
 }
@@ -214,21 +221,22 @@ function SidebarItem({
   text,
   href,
   active,
+  onClick,
 }: {
   icon: React.ReactNode;
   text: string;
-  href: string;
+  href?: string;
   active: boolean;
+  onClick?: () => void;
 }) {
-  return (
-    <Link
-      href={href}
-      className={`relative flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 transition-all duration-300 xl:px-4 ${
-        active
-          ? `border border-violet-500/30 bg-violet-500/10 text-white shadow-[0_0_25px_rgba(139,92,246,0.25)]`
-          : `border border-transparent text-zinc-300 hover:border-violet-500/30 hover:bg-zinc-800/80 hover:text-white`
-      } `}
-    >
+  const className = `relative flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 transition-all duration-300 xl:px-4 ${
+    active
+      ? `border border-violet-500/30 bg-violet-500/10 text-white shadow-[0_0_25px_rgba(139,92,246,0.25)]`
+      : `border border-transparent text-zinc-300 hover:border-violet-500/30 hover:bg-zinc-800/80 hover:text-white`
+  }`;
+
+  const content = (
+    <>
       {active && (
         <div className="absolute top-2 bottom-2 left-0 w-1 rounded-r-full bg-violet-500" />
       )}
@@ -238,6 +246,20 @@ function SidebarItem({
       <span className="text-[14px] leading-none font-medium whitespace-nowrap xl:text-[15px]">
         {text}
       </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href ?? "#"} className={className}>
+      {content}
     </Link>
   );
 }

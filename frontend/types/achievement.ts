@@ -4,7 +4,6 @@ export interface AchievementFormData {
   difficulty: string;
   description: string;
   image: string;
-  points: string;
   expiration: string;
   metadata: string;
 }
@@ -15,7 +14,6 @@ export const achievementFormDefault: AchievementFormData = {
   difficulty: "Beginner",
   description: "",
   image: "",
-  points: "",
   expiration: "",
   metadata: "",
 };
@@ -34,8 +32,6 @@ export interface Achievement {
   description: string | null;
 
   image: string | null;
-
-  points: number | null;
 
   expiration: string | null;
 

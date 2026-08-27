@@ -26,7 +26,7 @@ const actions: ActionItem[] = [
   {
     title: "Issue Credential",
     description: "Mint credentials",
-    href: "/credentials/issue",
+    href: "/credentials/list",
     icon: BadgeCheck,
   },
 ];

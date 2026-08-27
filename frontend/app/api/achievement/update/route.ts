@@ -14,7 +14,6 @@ export async function PUT(request: Request) {
       difficulty,
       description,
       image,
-      points,
       expiration,
       metadata,
     } = body;
@@ -32,7 +31,7 @@ export async function PUT(request: Request) {
     }
 
     // Validate title
-    if (!title) {
+    if (!title?.trim()) {
       return errorResponse("Achievement title is required.", 400);
     }
 
@@ -70,12 +69,11 @@ export async function PUT(request: Request) {
     const { data, error } = await supabaseServer
       .from("achievements")
       .update({
-        title,
+        title: title.trim(),
         category,
         difficulty,
         description,
         image,
-        points: points ? Number(points) : null,
         expiration: expiration || null,
         metadata: metadata
           ? {

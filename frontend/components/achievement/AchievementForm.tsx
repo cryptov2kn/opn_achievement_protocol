@@ -17,7 +17,7 @@ import AchievementDescriptionField from "./fields/AchievementDescriptionField";
 import AchievementExpirationField from "./fields/AchievementExpirationField";
 import AchievementImageField from "./fields/AchievementImageField";
 import AchievementMetadataField from "./fields/AchievementMetadataField";
-import AchievementStatsFields from "./fields/AchievementStatsFields";
+//import AchievementStatsFields from "./fields/AchievementStatsFields";
 
 interface Props {
   form: AchievementFormData;
@@ -90,7 +90,6 @@ export default function AchievementForm({
       }, 800);
     } catch (error) {
       console.error(error);
-
       notify.error("Something went wrong.");
     }
   }
@@ -131,8 +130,6 @@ export default function AchievementForm({
       />
 
       <AchievementDescriptionField form={form} handleChange={handleChange} />
-
-      <AchievementStatsFields form={form} handleChange={handleChange} />
 
       <AchievementExpirationField form={form} handleChange={handleChange} />
 

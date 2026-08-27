@@ -5,9 +5,9 @@ import FormSection from "@/components/ui/FormSection";
 
 import { useAchievementList } from "@/hooks/achievement/useAchievementList";
 import { EventFormData } from "@/types/event";
-import EventImageField from "./EventImageField";
 
 import EventBasicFields from "./fields/EventBasicFields";
+import EventImageField from "./fields/EventImageField";
 
 interface Props {
   form: EventFormData;
@@ -40,10 +40,6 @@ export default function EventEditForm({
     return true;
   });
 
-  const selectedAchievement = achievements.find(
-    (item) => item.id === form.achievementId,
-  );
-
   function updateField(field: keyof EventFormData, value: string) {
     setForm((prev) => ({
       ...prev,
@@ -55,6 +51,16 @@ export default function EventEditForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     updateField(e.target.name as keyof EventFormData, e.target.value);
+  }
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const imageUrl = URL.createObjectURL(file);
+
+    updateField("image", imageUrl);
   }
 
   function handleReset() {
@@ -72,7 +78,11 @@ export default function EventEditForm({
       <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
         {/* Left */}
         <div>
-          <EventImageField image={selectedAchievement?.image ?? null} />
+          <EventImageField
+            form={form}
+            handleImageUpload={handleImageUpload}
+            variant="compact"
+          />
         </div>
 
         {/* Right — Event fields */}

@@ -67,7 +67,6 @@ export default function AchievementSection() {
    *
    * newest
    * oldest
-   * points
    * live
    * ended
    * archived
@@ -80,7 +79,6 @@ export default function AchievementSection() {
         return viewAchievements(filteredAchievements, view);
 
       case "oldest":
-      case "points":
       case "newest":
       default:
         return sortAchievements(filteredAchievements, view);
@@ -135,7 +133,6 @@ export default function AchievementSection() {
             items={[
               { label: "Newest", value: "newest" },
               { label: "Oldest", value: "oldest" },
-              { label: "Highest Points", value: "points" },
 
               { divider: true, label: "" },
 

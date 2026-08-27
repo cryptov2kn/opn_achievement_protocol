@@ -2,145 +2,467 @@
 pragma solidity ^0.8.24;
 
 import "./IssuerRegistry.sol";
+import "./AchievementRegistry.sol";
 
 contract EventRegistry {
-    // 1. enum
-    enum EventStatus {
-        Draft,
-        Published,
-        Archived
-    }
-
-    // 2. struct
     struct Event {
         uint256 id;
         address issuer;
+        uint256 achievementId;
+
         string title;
         string description;
+
+        string eventType;
+        string location;
+
         uint256 startTime;
         uint256 endTime;
-        string metadataURI;
-        EventStatus status;
+
+        uint256 points;
+
+        // Destructive validity state.
+        bool deleted;
     }
 
-    // 3. state variables
     uint256 public nextEventId;
 
     mapping(uint256 => Event) public events;
 
-    IssuerRegistry public issuerRegistry;
+    /// @notice Issuer => event IDs created by issuer.
+    mapping(address => uint256[]) private issuerEvents;
 
-    // 4. constructor
-    constructor(address _issuerRegistry) {
-        issuerRegistry = IssuerRegistry(_issuerRegistry);
+    /// @notice Achievement => event IDs created for that achievement.
+    mapping(uint256 => uint256[]) private achievementEvents;
+
+    IssuerRegistry public immutable issuerRegistry;
+
+    AchievementRegistry public immutable achievementRegistry;
+
+    event EventCreated(
+        uint256 indexed eventId,
+        uint256 indexed achievementId,
+        address indexed issuer
+    );
+
+    event EventUpdated(
+        uint256 indexed eventId
+    );
+
+    event EventDeleted(
+        uint256 indexed eventId
+    );
+
+    constructor(
+        address _issuerRegistry,
+        address _achievementRegistry
+    ) {
+        require(
+            _issuerRegistry != address(0),
+            "Invalid issuer registry"
+        );
+
+        require(
+            _achievementRegistry != address(0),
+            "Invalid achievement registry"
+        );
+
+        issuerRegistry = IssuerRegistry(
+            _issuerRegistry
+        );
+
+        achievementRegistry = AchievementRegistry(
+            _achievementRegistry
+        );
     }
 
-    // 5. modifiers
-    modifier onlyApprovedIssuer() {
+    // =============================================================
+    // Modifiers
+    // =============================================================
+
+    modifier onlyIssuer() {
         require(
-            issuerRegistry.isApprovedIssuer(msg.sender),
-            "Not approved issuer"
+            issuerRegistry.isIssuer(msg.sender),
+            "Not an issuer"
         );
         _;
     }
 
-    // 6. events
-    event EventCreated(uint256 indexed eventId, address indexed issuer);
+    modifier eventExists(
+        uint256 eventId
+    ) {
+        require(
+            events[eventId].issuer != address(0),
+            "Event not found"
+        );
+        _;
+    }
 
-    event EventUpdated(uint256 indexed eventId);
+    modifier eventOwner(
+        uint256 eventId
+    ) {
+        require(
+            events[eventId].issuer == msg.sender,
+            "Not event owner"
+        );
+        _;
+    }
 
-    event EventPublished(uint256 indexed eventId);
+    // =============================================================
+    // Create
+    // =============================================================
 
-    event EventArchived(uint256 indexed eventId);
-
-    //7. function
+    /**
+     * @notice Create a new Event for an Achievement owned by msg.sender.
+     *
+     * Event is public immediately after creation.
+     *
+     * Conditions:
+     * - caller is a registered issuer
+     * - achievement exists
+     * - achievement belongs to caller
+     * - achievement is valid for NEW event creation
+     *
+     * No Draft state.
+     * No Published state.
+     * No Archive state.
+     */
     function createEvent(
-        string memory _title,
-        string memory _description,
-        uint256 _startTime,
-        uint256 _endTime,
-        string memory _metadataURI
-    ) external onlyApprovedIssuer {
-        require(bytes(_title).length > 0, "Empty title");
+        uint256 achievementId,
+        string calldata title,
+        string calldata description,
+        string calldata eventType,
+        string calldata location,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 points
+    )
+        external
+        onlyIssuer
+    {
+        require(
+            achievementRegistry.isValidForEventCreation(
+                achievementId
+            ),
+            "Achievement not valid"
+        );
 
-        require(_endTime > _startTime, "Invalid time");
+        require(
+            achievementRegistry.isAchievementOwner(
+                achievementId,
+                msg.sender
+            ),
+            "Not achievement owner"
+        );
+
+        require(
+            bytes(title).length > 0,
+            "Empty title"
+        );
+
+        require(
+            bytes(eventType).length > 0,
+            "Empty event type"
+        );
+
+        require(
+            bytes(location).length > 0,
+            "Empty location"
+        );
+
+        require(
+            endTime > startTime,
+            "Invalid time"
+        );
 
         uint256 eventId = nextEventId;
 
         events[eventId] = Event({
             id: eventId,
             issuer: msg.sender,
-            title: _title,
-            description: _description,
-            startTime: _startTime,
-            endTime: _endTime,
-            metadataURI: _metadataURI,
-            status: EventStatus.Draft
+            achievementId: achievementId,
+            title: title,
+            description: description,
+            eventType: eventType,
+            location: location,
+            startTime: startTime,
+            endTime: endTime,
+            points: points,
+            deleted: false
         });
+
+        issuerEvents[msg.sender].push(eventId);
+        achievementEvents[achievementId].push(eventId);
 
         nextEventId++;
 
-        emit EventCreated(eventId, msg.sender);
+        emit EventCreated(
+            eventId,
+            achievementId,
+            msg.sender
+        );
     }
 
+    // =============================================================
+    // Edit
+    // =============================================================
+
+    /**
+     * @notice Edit an existing Event.
+     *
+     * Edit is allowed regardless of:
+     * - UPCOMING
+     * - LIVE
+     * - END
+     *
+     * The Achievement relationship is intentionally immutable here.
+     * Existing Credentials must continue to refer to the same
+     * Achievement/Event relationship.
+     */
     function updateEvent(
-        uint256 _eventId,
-        string memory _title,
-        string memory _description,
-        uint256 _startTime,
-        uint256 _endTime,
-        string memory _metadataURI
-    ) external {
-        Event storage eventData = events[_eventId];
+        uint256 eventId,
+        string calldata title,
+        string calldata description,
+        string calldata eventType,
+        string calldata location,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 points
+    )
+        external
+        eventExists(eventId)
+        eventOwner(eventId)
+    {
+        Event storage eventData = events[eventId];
 
-        require(eventData.issuer == msg.sender, "Not event owner");
+        require(
+            !eventData.deleted,
+            "Event deleted"
+        );
 
-        require(eventData.status == EventStatus.Draft, "Event locked");
+        require(
+            bytes(title).length > 0,
+            "Empty title"
+        );
 
-        require(_endTime > _startTime, "Invalid time");
+        require(
+            bytes(eventType).length > 0,
+            "Empty event type"
+        );
 
-        eventData.title = _title;
-        eventData.description = _description;
-        eventData.startTime = _startTime;
-        eventData.endTime = _endTime;
-        eventData.metadataURI = _metadataURI;
+        require(
+            bytes(location).length > 0,
+            "Empty location"
+        );
 
-        emit EventUpdated(_eventId);
+        require(
+            endTime > startTime,
+            "Invalid time"
+        );
+
+        eventData.title = title;
+        eventData.description = description;
+        eventData.eventType = eventType;
+        eventData.location = location;
+        eventData.startTime = startTime;
+        eventData.endTime = endTime;
+        eventData.points = points;
+
+        emit EventUpdated(eventId);
     }
 
-    function publishEvent(uint256 _eventId) external {
-        Event storage eventData = events[_eventId];
+    // =============================================================
+    // Delete
+    // =============================================================
 
-        require(eventData.issuer == msg.sender, "Not event owner");
+    /**
+     * @notice Delete Event.
+     *
+     * The contract marks the Event as deleted.
+     * SQL/indexer can remove it from public listings.
+     *
+     * Existing Credentials/SBTs are not burned by this action.
+     */
+    function deleteEvent(
+        uint256 eventId
+    )
+        external
+        eventExists(eventId)
+        eventOwner(eventId)
+    {
+        Event storage eventData = events[eventId];
 
-        require(eventData.status == EventStatus.Draft, "Already published");
+        require(
+            !eventData.deleted,
+            "Event already deleted"
+        );
 
-        eventData.status = EventStatus.Published;
+        eventData.deleted = true;
 
-        emit EventPublished(_eventId);
+        emit EventDeleted(eventId);
     }
 
-    function archiveEvent(uint256 _eventId) external {
-        Event storage eventData = events[_eventId];
+    // =============================================================
+    // Derived timing state
+    // =============================================================
 
-        require(eventData.issuer == msg.sender, "Not event owner");
+    /**
+     * @notice Event is UPCOMING when startTime is in the future.
+     */
+    function isUpcoming(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (bool)
+    {
+        Event storage eventData = events[eventId];
 
-        require(eventData.status == EventStatus.Published, "Invalid status");
-
-        eventData.status = EventStatus.Archived;
-
-        emit EventArchived(_eventId);
+        return (
+            !eventData.deleted &&
+            block.timestamp < eventData.startTime
+        );
     }
 
-    function getEventIssuer(uint256 eventId) external view returns (address) {
+    /**
+     * @notice Event is LIVE while:
+     * startTime <= now < endTime
+     */
+    function isLive(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (bool)
+    {
+        Event storage eventData = events[eventId];
+
+        return (
+            !eventData.deleted &&
+            block.timestamp >= eventData.startTime &&
+            block.timestamp < eventData.endTime
+        );
+    }
+
+    /**
+     * @notice Event is END when now >= endTime.
+     */
+    function isEnded(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (bool)
+    {
+        Event storage eventData = events[eventId];
+
+        return (
+            !eventData.deleted &&
+            block.timestamp >= eventData.endTime
+        );
+    }
+
+    // =============================================================
+    // Validation helpers
+    // =============================================================
+
+    /**
+     * @notice Whether an Event exists and is not deleted.
+     */
+    function isValidEvent(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (bool)
+    {
+        return !events[eventId].deleted;
+    }
+
+    /**
+     * @notice Whether an Event belongs to a specific issuer.
+     */
+    function isEventOwner(
+        uint256 eventId,
+        address issuer
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (bool)
+    {
+        return events[eventId].issuer == issuer;
+    }
+
+    // =============================================================
+    // Getters
+    // =============================================================
+
+    function getEvent(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (Event memory)
+    {
+        return events[eventId];
+    }
+
+    function getEventIssuer(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (address)
+    {
         return events[eventId].issuer;
     }
 
-    function isPublished(uint256 eventId) external view returns (bool) {
-        return events[eventId].status == EventStatus.Published;
+    function getEventAchievement(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (uint256)
+    {
+        return events[eventId].achievementId;
     }
 
-    function getEvent(uint256 id) external view returns (Event memory) {
-        return events[id];
+    function getEventPoints(
+        uint256 eventId
+    )
+        external
+        view
+        eventExists(eventId)
+        returns (uint256)
+    {
+        return events[eventId].points;
+    }
+
+    function getIssuerEvents(
+        address issuer
+    )
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return issuerEvents[issuer];
+    }
+
+    function getAchievementEvents(
+        uint256 achievementId
+    )
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return achievementEvents[achievementId];
     }
 }

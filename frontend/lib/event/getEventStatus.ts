@@ -3,9 +3,8 @@ import { Event } from "@/types/event";
 export function getEventStatus(event: Event): "upcoming" | "live" | "ended" {
   const now = new Date();
 
-  const start = event.start_date ? new Date(event.start_date) : null;
-
-  const end = event.end_date ? new Date(event.end_date) : null;
+  const start = event.start_at ? new Date(event.start_at) : null;
+  const end = event.end_at ? new Date(event.end_at) : null;
 
   if (!start || !end) {
     return "upcoming";
@@ -15,7 +14,7 @@ export function getEventStatus(event: Event): "upcoming" | "live" | "ended" {
     return "upcoming";
   }
 
-  if (now >= start && now <= end) {
+  if (now <= end) {
     return "live";
   }
 

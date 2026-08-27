@@ -16,8 +16,8 @@ interface Props {
 
 export default function IssuerPreviewCard({ form }: Props) {
   return (
-    <div className="rounded-3xl border border-violet-500/20 bg-zinc-900/70 p-8 backdrop-blur-xl">
-      <h2 className="text-xl font-semibold">Issuer Preview</h2>
+    <div className="rounded-3xl border border-violet-500/20 bg-[#121214] p-5 md:p-6">
+      <h2 className="text-center text-xl font-semibold">Verified Issuer</h2>
 
       <div className="mt-8 flex justify-center">
         {form.logo ? (

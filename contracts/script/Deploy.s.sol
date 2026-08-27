@@ -3,10 +3,9 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 
-import "../src/access/AccessControlManager.sol";
 import "../src/registry/IssuerRegistry.sol";
-import "../src/registry/EventRegistry.sol";
 import "../src/registry/AchievementRegistry.sol";
+import "../src/registry/EventRegistry.sol";
 import "../src/token/AchievementSBT.sol";
 
 contract Deploy is Script {
@@ -15,30 +14,48 @@ contract Deploy is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        AccessControlManager access = new AccessControlManager(
-            vm.addr(deployerPrivateKey)
+        // 1. Deploy IssuerRegistry
+        IssuerRegistry issuerRegistry = new IssuerRegistry();
+
+        // 2. Deploy AchievementRegistry
+        AchievementRegistry achievementRegistry =
+            new AchievementRegistry(
+                address(issuerRegistry)
+            );
+
+        // 3. Deploy EventRegistry
+        EventRegistry eventRegistry =
+            new EventRegistry(
+                address(issuerRegistry),
+                address(achievementRegistry)
+            );
+
+        // 4. Deploy AchievementSBT
+        AchievementSBT achievementSBT =
+            new AchievementSBT(
+                address(achievementRegistry),
+                address(eventRegistry)
+            );
+
+        console.log(
+            "IssuerRegistry:",
+            address(issuerRegistry)
         );
 
-        IssuerRegistry issuer = new IssuerRegistry(address(access));
+        console.log(
+            "AchievementRegistry:",
+            address(achievementRegistry)
+        );
 
-        EventRegistry eventRegistry = new EventRegistry(address(issuer));
-
-        AchievementRegistry achievement = new AchievementRegistry(
-            address(issuer),
+        console.log(
+            "EventRegistry:",
             address(eventRegistry)
         );
 
-        AchievementSBT sbt = new AchievementSBT(address(achievement));
-
-        console.log("AccessControlManager:", address(access));
-
-        console.log("IssuerRegistry:", address(issuer));
-
-        console.log("EventRegistry:", address(eventRegistry));
-
-        console.log("AchievementRegistry:", address(achievement));
-
-        console.log("AchievementSBT:", address(sbt));
+        console.log(
+            "AchievementSBT:",
+            address(achievementSBT)
+        );
 
         vm.stopBroadcast();
     }

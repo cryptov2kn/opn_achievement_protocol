@@ -1,77 +1,78 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../access/AccessControlManager.sol";
-
 contract IssuerRegistry {
     struct Issuer {
         string name;
         string metadataURI;
-        bool approved;
         bool exists;
     }
 
+    /// @notice Wallet => issuer profile
+    /// One wallet can have at most one issuer profile.
     mapping(address => Issuer) public issuers;
 
-    AccessControlManager public accessManager;
+    event IssuerRegistered(
+        address indexed issuer,
+        string name,
+        string metadataURI
+    );
 
-    event IssuerRegistered(address indexed issuer, string name);
-
-    event IssuerApproved(address indexed issuer);
-
-    event IssuerRevoked(address indexed issuer);
-
-    constructor(address _accessManager) {
-        accessManager = AccessControlManager(_accessManager);
-    }
-
+    /**
+     * @notice Register the connected wallet as an issuer.
+     *
+     * Rules:
+     * - one wallet can register only once
+     * - issuer becomes valid immediately after registration
+     * - no admin approval / role / verification is required
+     */
     function registerIssuer(
         string calldata name,
         string calldata metadataURI
     ) external {
-        require(!issuers[msg.sender].exists, "Already registered");
+        require(
+            bytes(name).length > 0,
+            "Issuer name required"
+        );
+
+        require(
+            !issuers[msg.sender].exists,
+            "Already registered"
+        );
 
         issuers[msg.sender] = Issuer({
             name: name,
             metadataURI: metadataURI,
-            approved: false,
             exists: true
         });
 
-        emit IssuerRegistered(msg.sender, name);
+        emit IssuerRegistered(
+            msg.sender,
+            name,
+            metadataURI
+        );
     }
 
-    function approveIssuer(address issuer) external {
+    /**
+     * @notice Check whether a wallet has registered an issuer profile.
+     */
+    function isIssuer(
+        address wallet
+    ) external view returns (bool) {
+        return issuers[wallet].exists;
+    }
+
+    /**
+     * @notice Return issuer profile.
+     */
+    function getIssuer(
+        address wallet
+    ) external view returns (Issuer memory) {
         require(
-            accessManager.hasRole(
-                accessManager.DEFAULT_ADMIN_ROLE(),
-                msg.sender
-            ),
-            "Not admin"
+            issuers[wallet].exists,
+            "Issuer not found"
         );
 
-        require(issuers[issuer].exists, "Issuer not found");
-
-        issuers[issuer].approved = true;
-
-        emit IssuerApproved(issuer);
-    }
-
-    function revokeIssuer(address issuer) external {
-        require(
-            accessManager.hasRole(
-                accessManager.DEFAULT_ADMIN_ROLE(),
-                msg.sender
-            ),
-            "Not admin"
-        );
-
-        issuers[issuer].approved = false;
-
-        emit IssuerRevoked(issuer);
-    }
-
-    function isApprovedIssuer(address issuer) external view returns (bool) {
-        return issuers[issuer].approved;
+        return issuers[wallet];
     }
 }

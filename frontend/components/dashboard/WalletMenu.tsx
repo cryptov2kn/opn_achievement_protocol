@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useAccount, useDisconnect } from "wagmi";
-import { Copy, ExternalLink, LogOut, ChevronDown } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useAccount, useDisconnect } from "wagmi";
 //import Image from "next/image";
 
 export default function WalletMenu() {
@@ -34,7 +34,7 @@ export default function WalletMenu() {
 
   if (status === "connecting" || status === "reconnecting") {
     return (
-      <div className="w-[180px] h-14 rounded-2xl bg-zinc-900/70 animate-pulse" />
+      <div className="h-14 w-[180px] animate-pulse rounded-2xl bg-zinc-900/70" />
     );
   }
 
@@ -73,26 +73,7 @@ export default function WalletMenu() {
 
       <button
         onClick={() => setOpen(!open)}
-        className="
-        flex
-        items-center
-        gap-3
-
-        h-14
-        px-4
-
-        rounded-2xl
-
-        border
-        border-violet-500/30
-
-        bg-zinc-900/80
-
-        hover:border-violet-400
-        hover:bg-zinc-800
-
-        transition
-        "
+        className="flex h-14 items-center gap-3 rounded-2xl border border-violet-500/30 bg-zinc-900/80 px-4 transition hover:border-violet-400 hover:bg-zinc-800"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -100,14 +81,7 @@ export default function WalletMenu() {
           alt="Wallet Avatar"
           width={40}
           height={40}
-          className="
-    w-10
-    h-10
-    rounded-full
-    border
-    border-violet-500/30
-    bg-zinc-900
-  "
+          className="h-10 w-10 rounded-full border border-violet-500/30 bg-zinc-900"
         />
 
         <div className="text-left">
@@ -117,40 +91,14 @@ export default function WalletMenu() {
         </div>
 
         <ChevronDown
-          className={`
-          w-4
-          h-4
-          transition-transform
-          ${open ? "rotate-180" : ""}
-          `}
+          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""} `}
         />
       </button>
 
       {/* MENU */}
 
       {open && (
-        <div
-          className="
-          absolute
-          right-0
-          mt-3
-
-          w-72
-
-          rounded-3xl
-
-          border
-          border-zinc-700
-
-          bg-zinc-900
-
-          shadow-2xl
-
-          overflow-hidden
-
-          z-50
-          "
-        >
+        <div className="absolute right-0 z-50 mt-3 w-72 overflow-hidden rounded-3xl border border-zinc-700 bg-zinc-900 shadow-2xl">
           <div className="p-6">
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -159,14 +107,7 @@ export default function WalletMenu() {
                 alt="Wallet Avatar"
                 width={56}
                 height={56}
-                className="
-    w-14
-    h-14
-    rounded-full
-    border
-    border-violet-500/30
-    bg-zinc-900
-  "
+                className="h-14 w-14 rounded-full border border-violet-500/30 bg-zinc-900"
               />
 
               <div>
@@ -174,7 +115,7 @@ export default function WalletMenu() {
 
                 <p className="text-sm text-zinc-400">{short}</p>
 
-                <p className="text-xs text-violet-400 mt-1">{chain?.name}</p>
+                <p className="mt-1 text-xs text-violet-400">{chain?.name}</p>
               </div>
             </div>
 
@@ -182,23 +123,7 @@ export default function WalletMenu() {
 
             <button
               onClick={copyAddress}
-              className="
-              w-full
-              flex
-              items-center
-              gap-3
-
-              mt-4
-
-              px-3
-              py-3
-
-              rounded-xl
-
-              hover:bg-zinc-800
-
-              transition
-              "
+              className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-zinc-800"
             >
               <Copy size={18} />
               Copy Address
@@ -206,23 +131,7 @@ export default function WalletMenu() {
 
             <button
               onClick={openExplorer}
-              className="
-              w-full
-              flex
-              items-center
-              gap-3
-
-              mt-2
-
-              px-3
-              py-3
-
-              rounded-xl
-
-              hover:bg-zinc-800
-
-              transition
-              "
+              className="mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-zinc-800"
             >
               <ExternalLink size={18} />
               View Explorer
@@ -232,23 +141,7 @@ export default function WalletMenu() {
 
             <button
               onClick={() => disconnect()}
-              className="
-              w-full
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-3
-
-              rounded-xl
-
-              text-red-400
-
-              hover:bg-red-500/10
-
-              transition
-              "
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-red-400 transition hover:bg-red-500/10"
             >
               <LogOut size={18} />
               Disconnect Wallet

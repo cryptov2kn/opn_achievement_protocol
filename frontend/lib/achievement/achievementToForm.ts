@@ -14,8 +14,6 @@ export function achievementToForm(
 
     image: achievement.image ?? "",
 
-    points: achievement.points?.toString() ?? "",
-
     expiration: achievement.expiration
       ? achievement.expiration.slice(0, 10)
       : "",

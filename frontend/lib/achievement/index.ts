@@ -37,9 +37,6 @@ export function sortAchievements(achievements: Achievement[], sort: string) {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
 
-    case "points":
-      return sorted.sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
-
     case "newest":
     default:
       return sorted.sort(

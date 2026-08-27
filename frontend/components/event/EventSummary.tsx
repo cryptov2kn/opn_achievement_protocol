@@ -1,23 +1,44 @@
 "use client";
 
-import { formatDate } from "@/lib/utils/formatDate";
 import { Event } from "@/types/event";
+import { DateTime } from "luxon";
 
 interface Props {
   event: Event;
 }
 
+function formatEventDateTime(value: string | null) {
+  if (!value) {
+    return {
+      date: "-",
+      time: "-",
+      offset: "",
+    };
+  }
+
+  const dateTime = DateTime.fromISO(value).toLocal();
+
+  return {
+    date: dateTime.toFormat("MMM dd, yyyy"),
+    time: dateTime.toFormat("HH:mm"),
+    offset: `UTC${dateTime.toFormat("ZZ").slice(0, 3)}`,
+  };
+}
+
 export default function EventSummary({ event }: Props) {
+  const start = formatEventDateTime(event.start_at);
+  const end = formatEventDateTime(event.end_at);
+
   return (
     <div className="grid items-stretch gap-8 lg:grid-cols-[320px_1fr]">
       {/* Left */}
       <div>
-        {event.achievement?.image && (
+        {event.image && (
           <div className="overflow-hidden rounded-2xl border border-zinc-800 lg:h-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={event.achievement.image}
-              alt={event.achievement.title}
+              src={event.image}
+              alt={event.title}
               className="h-full w-full object-cover"
             />
           </div>
@@ -43,7 +64,7 @@ export default function EventSummary({ event }: Props) {
               Description
             </p>
 
-            <p className="leading-7 whitespace-pre-wrap text-zinc-300">
+            <p className="leading-7 break-all whitespace-pre-wrap text-zinc-300">
               {event.description || "-"}
             </p>
           </div>
@@ -53,14 +74,14 @@ export default function EventSummary({ event }: Props) {
               Location
             </p>
 
-            <p className="leading-7 whitespace-pre-wrap text-zinc-300">
+            <p className="leading-7 break-all whitespace-pre-wrap text-zinc-300">
               {event.location || "-"}
             </p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <p className="text-sm text-zinc-500">Participants</p>
 
@@ -70,18 +91,32 @@ export default function EventSummary({ event }: Props) {
           </div>
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <p className="text-sm text-zinc-500">Start Date</p>
+            <p className="text-sm text-zinc-500">Points</p>
 
             <p className="mt-1 text-lg font-semibold">
-              {formatDate(event.start_date)}
+              {event.points ?? 0} pts
             </p>
           </div>
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <p className="text-sm text-zinc-500">End Date</p>
+            <p className="text-sm text-zinc-500">Start</p>
 
-            <p className="mt-1 text-lg font-semibold">
-              {formatDate(event.end_date)}
+            <p className="mt-1 text-lg font-semibold">{start.date}</p>
+
+            <p className="text-sm font-normal text-zinc-400">
+              {start.time}
+              {start.offset && ` (${start.offset})`}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <p className="text-sm text-zinc-500">End</p>
+
+            <p className="mt-1 text-lg font-semibold">{end.date}</p>
+
+            <p className="text-sm font-normal text-zinc-400">
+              {end.time}
+              {end.offset && ` (${end.offset})`}
             </p>
           </div>
         </div>

@@ -43,20 +43,27 @@ export function sortEvents(events: Event[], sort: string) {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
 
+    case "points":
+      return sorted.sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+
     case "upcoming":
     case "live":
-      return sorted.sort(
-        (a, b) =>
-          new Date(a.start_date ?? "").getTime() -
-          new Date(b.start_date ?? "").getTime(),
-      );
+      return sorted.sort((a, b) => {
+        const aTime = a.start_at ? new Date(a.start_at).getTime() : Infinity;
+
+        const bTime = b.start_at ? new Date(b.start_at).getTime() : Infinity;
+
+        return aTime - bTime;
+      });
 
     case "ended":
-      return sorted.sort(
-        (a, b) =>
-          new Date(b.end_date ?? "").getTime() -
-          new Date(a.end_date ?? "").getTime(),
-      );
+      return sorted.sort((a, b) => {
+        const aTime = a.end_at ? new Date(a.end_at).getTime() : 0;
+
+        const bTime = b.end_at ? new Date(b.end_at).getTime() : 0;
+
+        return bTime - aTime;
+      });
 
     case "newest":
     default:
@@ -77,25 +84,26 @@ export function viewEvents(events: Event[], view: string) {
   switch (view) {
     case "upcoming":
       return events.filter((event) => {
-        if (!event.start_date) return false;
+        if (!event.start_at) return false;
 
-        return new Date(event.start_date) > now;
+        return new Date(event.start_at) > now;
       });
 
     case "live":
       return events.filter((event) => {
-        if (!event.start_date || !event.end_date) return false;
+        if (!event.start_at || !event.end_at) return false;
 
-        return (
-          new Date(event.start_date) <= now && new Date(event.end_date) >= now
-        );
+        const start = new Date(event.start_at);
+        const end = new Date(event.end_at);
+
+        return start <= now && now <= end;
       });
 
     case "ended":
       return events.filter((event) => {
-        if (!event.end_date) return false;
+        if (!event.end_at) return false;
 
-        return new Date(event.end_date) < now;
+        return new Date(event.end_at) < now;
       });
 
     default:

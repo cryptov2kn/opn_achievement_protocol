@@ -73,8 +73,8 @@ export default function RegisterIssuerForm({ form, setForm }: Props) {
 
   return (
     <FormSection
-      title="Register as Issuer"
-      description="Become an organization and issue credentials on OPN."
+      title="Create Issuer Profile"
+      description="Set up your issuer profile to start creating achievements, events, and credentials on OPN."
     >
       {/* Organization Name */}
       <FormInput
@@ -171,7 +171,7 @@ export default function RegisterIssuerForm({ form, setForm }: Props) {
 
       {/* Button */}
       <FormActions
-        submitText="Register as Issuer"
+        submitText="Create Issuer Profile"
         onSubmit={handleSubmit}
         onReset={handleReset}
       />

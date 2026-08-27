@@ -26,16 +26,14 @@ export async function GET(request: Request) {
       .from("events")
       .select(
         `
-    *,
-    achievement:achievements (
-      id,
-      title,
-      image,
-      points,
-      category,
-      difficulty
-    )
-  `,
+        *,
+        achievement:achievements (
+          id,
+          title,
+          category,
+          difficulty
+        )
+      `,
       )
       .eq("issuer_id", issuer.id)
       .order("created_at", { ascending: false });

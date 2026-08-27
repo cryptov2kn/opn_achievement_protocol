@@ -9,8 +9,8 @@ const benefits = [
 
 export default function WhyBecomeIssuer() {
   return (
-    <div className="rounded-3xl border border-violet-500/20 bg-zinc-900/60 p-8 backdrop-blur-xl">
-      <h2 className="text-xl font-bold">Why Become an Issuer?</h2>
+    <div className="rounded-3xl border border-violet-500/20 bg-[#121214] p-5 md:p-6">
+      <h2 className="text-xl font-bold">Why Create an Issuer Profile?</h2>
 
       <div className="mt-6 space-y-4">
         {benefits.map((item) => (

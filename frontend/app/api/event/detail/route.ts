@@ -19,8 +19,6 @@ export async function GET(request: Request) {
         achievement:achievements(
           id,
           title,
-          image,
-          points,
           category,
           difficulty
         )

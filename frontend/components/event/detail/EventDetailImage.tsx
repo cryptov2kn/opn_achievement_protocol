@@ -10,12 +10,11 @@ export default function EventDetailImage({ image }: Props) {
         <img
           src={image}
           alt="Event"
-          className="h-[360px] w-[85%] rounded-2xl border border-zinc-800 object-cover transition hover:border-violet-500/30 md:w-[80%] lg:w-[75%]"
+          className="h-[520px] w-[70%] max-w-3xl rounded-2xl border border-zinc-800 object-cover transition hover:border-violet-500/30 md:w-[65%] lg:w-[60%]"
         />
       ) : (
-        <div className="mx-auto flex h-[360px] w-[90%] max-w-4xl flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-700 bg-black text-zinc-500">
+        <div className="mx-auto flex h-[520px] w-[70%] max-w-3xl flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-700 bg-black text-zinc-500 md:w-[65%] lg:w-[60%]">
           <span className="text-5xl">🎉</span>
-
           <p className="mt-3 text-sm">No Event Image</p>
         </div>
       )}

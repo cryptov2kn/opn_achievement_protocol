@@ -1,7 +1,9 @@
+import { ReactNode } from "react";
+
 interface Props {
   icon: string;
   title: string;
-  value: string | number;
+  value: ReactNode;
 }
 
 export default function EventDetailStat({ icon, title, value }: Props) {

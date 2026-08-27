@@ -3,206 +3,439 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 
-import {AccessControlManager} from "../src/access/AccessControlManager.sol";
-
 import {IssuerRegistry} from "../src/registry/IssuerRegistry.sol";
-
-import {EventRegistry} from "../src/registry/EventRegistry.sol";
-
 import {AchievementRegistry} from "../src/registry/AchievementRegistry.sol";
 
 contract AchievementRegistryTest is Test {
-    AccessControlManager accessManager;
     IssuerRegistry issuerRegistry;
-    EventRegistry eventRegistry;
     AchievementRegistry achievementRegistry;
 
-    address admin = address(1);
-    address issuer = address(2);
-    address user = address(3);
+    address issuer = address(0x100);
+    address user = address(0x200);
+
+    uint256 expirationDate;
 
     function setUp() public {
-        vm.prank(admin);
-        accessManager = new AccessControlManager(admin);
+        issuerRegistry = new IssuerRegistry();
 
-        issuerRegistry = new IssuerRegistry(address(accessManager));
+        achievementRegistry =
+            new AchievementRegistry(
+                address(issuerRegistry)
+            );
 
-        eventRegistry = new EventRegistry(address(issuerRegistry));
-
-        achievementRegistry = new AchievementRegistry(
-            address(issuerRegistry),
-            address(eventRegistry)
-        );
-
-        // đăng ký issuer
         vm.prank(issuer);
-        issuerRegistry.registerIssuer("OPN Foundation", "ipfs://issuer");
 
-        // admin duyệt
-        vm.prank(admin);
-        issuerRegistry.approveIssuer(issuer);
-
-        // tạo event
-        vm.startPrank(issuer);
-
-        eventRegistry.createEvent(
-            "Builder Marathon",
-            "Season 2",
-            block.timestamp,
-            block.timestamp + 7 days,
-            "ipfs://event"
+        issuerRegistry.registerIssuer(
+            "OPN Foundation",
+            "ipfs://issuer"
         );
 
-        // publish event
-        eventRegistry.publishEvent(0);
-
-        vm.stopPrank();
+        expirationDate =
+            block.timestamp + 30 days;
     }
 
-    //Test 1 - Create Achievement
-    function testCreateAchievement() public {
+    function createDefaultAchievement()
+        internal
+    {
         vm.prank(issuer);
 
         achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Participation Badge",
-            "ipfs://achievement"
+            "OPN Builder Marathon",
+            "Builder achievement",
+            "ipfs://achievement",
+            expirationDate
         );
-
-        (
-            uint256 id,
-            uint256 eventId,
-            address achievementIssuer,
-            ,
-            ,
-            ,
-
-        ) = achievementRegistry.achievements(0);
-
-        assertEq(id, 0);
-        assertEq(eventId, 0);
-        assertEq(achievementIssuer, issuer);
     }
 
-    //Test 2 - Non issuer cannot create
-    function testNonIssuerCannotCreate() public {
+    // ---------------------------------------------------------
+    // Create
+    // ---------------------------------------------------------
+
+    function testCreateAchievement() public {
+        createDefaultAchievement();
+
+        AchievementRegistry.Achievement memory achievement =
+            achievementRegistry.getAchievement(0);
+
+        assertEq(achievement.id, 0);
+        assertEq(achievement.issuer, issuer);
+        assertEq(
+            achievement.title,
+            "OPN Builder Marathon"
+        );
+        assertEq(
+            achievement.description,
+            "Builder achievement"
+        );
+        assertEq(
+            achievement.metadataURI,
+            "ipfs://achievement"
+        );
+        assertEq(
+            achievement.expirationDate,
+            expirationDate
+        );
+
+        assertFalse(achievement.archived);
+        assertFalse(achievement.deleted);
+    }
+
+    function testNonIssuerCannotCreateAchievement()
+        public
+    {
         vm.prank(user);
 
-        vm.expectRevert("Not approved issuer");
+        vm.expectRevert("Not an issuer");
 
         achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Badge",
-            "ipfs://achievement"
+            "Unauthorized",
+            "Bad achievement",
+            "ipfs://bad",
+            expirationDate
         );
     }
 
-    //Test 3 - Publish Achievement
-    function testPublishAchievement() public {
-        vm.startPrank(issuer);
+    // ---------------------------------------------------------
+    // LIVE / END
+    // ---------------------------------------------------------
 
-        achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Badge",
-            "ipfs://achievement"
+    function testAchievementIsLiveBeforeExpiration()
+        public
+    {
+        createDefaultAchievement();
+
+        assertTrue(
+            achievementRegistry.isLive(0)
         );
 
-        achievementRegistry.publishAchievement(0);
-
-        vm.stopPrank();
-
-        (
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-            AchievementRegistry.AchievementStatus status
-        ) = achievementRegistry.achievements(0);
-
-        assertEq(
-            uint256(status),
-            uint256(AchievementRegistry.AchievementStatus.Published)
+        assertFalse(
+            achievementRegistry.isEnded(0)
         );
     }
 
-    //Test 4 - Archive Achievement
-    function testArchiveAchievement() public {
-        vm.startPrank(issuer);
+    function testAchievementEndsAtExpiration()
+        public
+    {
+        createDefaultAchievement();
 
-        achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Badge",
-            "ipfs://achievement"
+        vm.warp(expirationDate);
+
+        assertFalse(
+            achievementRegistry.isLive(0)
         );
 
-        achievementRegistry.publishAchievement(0);
-
-        achievementRegistry.archiveAchievement(0);
-
-        vm.stopPrank();
-
-        (
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-            AchievementRegistry.AchievementStatus status
-        ) = achievementRegistry.achievements(0);
-
-        assertEq(
-            uint256(status),
-            uint256(AchievementRegistry.AchievementStatus.Archived)
+        assertTrue(
+            achievementRegistry.isEnded(0)
         );
     }
 
-    //Test 5 - Cannot update after publish
-    function testCannotUpdateAfterPublish() public {
-        vm.startPrank(issuer);
+    // ---------------------------------------------------------
+    // Edit
+    // ---------------------------------------------------------
 
-        achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Badge",
-            "ipfs://achievement"
-        );
+    function testUpdateAchievement() public {
+        createDefaultAchievement();
 
-        achievementRegistry.publishAchievement(0);
+        uint256 newExpiration =
+            block.timestamp + 60 days;
 
-        vm.expectRevert("Achievement locked");
+        vm.prank(issuer);
 
         achievementRegistry.updateAchievement(
             0,
-            "New Name",
-            "New Desc",
-            "ipfs://new"
+            "Updated Achievement",
+            "Updated description",
+            "ipfs://updated",
+            newExpiration
         );
+
+        AchievementRegistry.Achievement memory achievement =
+            achievementRegistry.getAchievement(0);
+
+        assertEq(
+            achievement.title,
+            "Updated Achievement"
+        );
+
+        assertEq(
+            achievement.description,
+            "Updated description"
+        );
+
+        assertEq(
+            achievement.metadataURI,
+            "ipfs://updated"
+        );
+
+        assertEq(
+            achievement.expirationDate,
+            newExpiration
+        );
+    }
+
+    function testNonOwnerCannotUpdateAchievement()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.prank(user);
+
+        vm.expectRevert(
+            "Not achievement owner"
+        );
+
+        achievementRegistry.updateAchievement(
+            0,
+            "Hacked",
+            "Hacked",
+            "ipfs://hack",
+            block.timestamp + 10 days
+        );
+    }
+
+    function testUpdateArchivedAchievementReverts()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        vm.prank(issuer);
+
+        vm.expectRevert("Achievement archived");
+
+        achievementRegistry.updateAchievement(
+            0,
+            "Should Fail",
+            "Should Fail",
+            "ipfs://fail",
+            block.timestamp + 10 days
+        );
+    }
+
+    // ---------------------------------------------------------
+    // Archive / Restore
+    // ---------------------------------------------------------
+
+    function testArchiveAchievement() public {
+        createDefaultAchievement();
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        assertTrue(
+            achievementRegistry.isArchived(0)
+        );
+
+        assertFalse(
+            achievementRegistry.isLive(0)
+        );
+
+        assertFalse(
+            achievementRegistry.isEnded(0)
+        );
+    }
+
+    function testArchiveDoesNotChangeData() public {
+        createDefaultAchievement();
+
+        AchievementRegistry.Achievement memory beforeArchive =
+            achievementRegistry.getAchievement(0);
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        AchievementRegistry.Achievement memory afterArchive =
+            achievementRegistry.getAchievement(0);
+
+        assertEq(
+            afterArchive.id,
+            beforeArchive.id
+        );
+
+        assertEq(
+            afterArchive.issuer,
+            beforeArchive.issuer
+        );
+
+        assertEq(
+            afterArchive.title,
+            beforeArchive.title
+        );
+
+        assertEq(
+            afterArchive.description,
+            beforeArchive.description
+        );
+
+        assertEq(
+            afterArchive.metadataURI,
+            beforeArchive.metadataURI
+        );
+
+        assertEq(
+            afterArchive.expirationDate,
+            beforeArchive.expirationDate
+        );
+
+        assertFalse(afterArchive.deleted);
+        assertTrue(afterArchive.archived);
+    }
+
+    function testRestoreLiveAchievement() public {
+        createDefaultAchievement();
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        vm.prank(issuer);
+
+        achievementRegistry.restoreAchievement(0);
+
+        assertFalse(
+            achievementRegistry.isArchived(0)
+        );
+
+        assertTrue(
+            achievementRegistry.isLive(0)
+        );
+    }
+
+    function testRestoreEndedAchievement() public {
+        createDefaultAchievement();
+
+        vm.warp(expirationDate);
+
+        assertTrue(
+            achievementRegistry.isEnded(0)
+        );
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        vm.prank(issuer);
+
+        achievementRegistry.restoreAchievement(0);
+
+        assertFalse(
+            achievementRegistry.isArchived(0)
+        );
+
+        assertTrue(
+            achievementRegistry.isEnded(0)
+        );
+    }
+
+    // ---------------------------------------------------------
+    // Delete
+    // ---------------------------------------------------------
+
+    function testDeleteAchievement() public {
+        createDefaultAchievement();
+
+        vm.prank(issuer);
+
+        achievementRegistry.deleteAchievement(0);
+
+        assertTrue(
+            achievementRegistry.isDeleted(0)
+        );
+    }
+
+    function testCannotDeleteAchievementTwice()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.startPrank(issuer);
+
+        achievementRegistry.deleteAchievement(0);
+
+        vm.expectRevert(
+            "Achievement already deleted"
+        );
+
+        achievementRegistry.deleteAchievement(0);
 
         vm.stopPrank();
     }
 
-    //Test 6 - EventAchievements mapping
-    function testEventAchievements() public {
+    function testDeletedAchievementCannotCreateEvent()
+        public
+    {
+        createDefaultAchievement();
+
         vm.prank(issuer);
 
-        achievementRegistry.createAchievement(
-            0,
-            "Participant",
-            "Badge",
-            "ipfs://achievement"
+        achievementRegistry.deleteAchievement(0);
+
+        assertFalse(
+            achievementRegistry.isValidForEventCreation(0)
+        );
+    }
+
+    // ---------------------------------------------------------
+    // Event-creation eligibility
+    // ---------------------------------------------------------
+
+    function testEndedAchievementCannotCreateEvent()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.warp(expirationDate);
+
+        assertFalse(
+            achievementRegistry.isValidForEventCreation(0)
+        );
+    }
+
+    function testArchivedAchievementCannotCreateEvent()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.prank(issuer);
+
+        achievementRegistry.archiveAchievement(0);
+
+        assertFalse(
+            achievementRegistry.isValidForEventCreation(0)
+        );
+    }
+
+    function testExtendExpirationMakesAchievementLiveAgain()
+        public
+    {
+        createDefaultAchievement();
+
+        vm.warp(expirationDate);
+
+        assertTrue(
+            achievementRegistry.isEnded(0)
         );
 
-        uint256[] memory ids = achievementRegistry.getEventAchievements(0);
+        uint256 newExpiration =
+            block.timestamp + 30 days;
 
-        assertEq(ids.length, 1);
+        vm.prank(issuer);
 
-        assertEq(ids[0], 0);
+        achievementRegistry.updateAchievement(
+            0,
+            "OPN Builder Marathon",
+            "Builder achievement",
+            "ipfs://achievement",
+            newExpiration
+        );
+
+        assertTrue(
+            achievementRegistry.isLive(0)
+        );
     }
 }

@@ -10,7 +10,6 @@ import AchievementDescriptionField from "./fields/AchievementDescriptionField";
 import AchievementExpirationField from "./fields/AchievementExpirationField";
 import AchievementImageField from "./fields/AchievementImageField";
 import AchievementMetadataField from "./fields/AchievementMetadataField";
-import AchievementStatsFields from "./fields/AchievementStatsFields";
 
 interface Props {
   form: AchievementFormData;
@@ -87,8 +86,6 @@ export default function AchievementEditForm({
             form={form}
             handleChange={handleChange}
           />
-
-          <AchievementStatsFields form={form} handleChange={handleChange} />
 
           <AchievementExpirationField form={form} handleChange={handleChange} />
 

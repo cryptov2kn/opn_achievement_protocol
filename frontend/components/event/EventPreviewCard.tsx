@@ -1,3 +1,4 @@
+import { getUTCOffset } from "@/lib/timezone";
 import { Achievement } from "@/types/achievement";
 import { EventFormData } from "@/types/event";
 
@@ -17,11 +18,11 @@ export default function EventPreviewCard({ form, achievements }: Props) {
       {/* preview */}
       <div className="mt-6 p-6">
         <div className="flex h-44 items-center justify-center overflow-hidden rounded-2xl bg-zinc-800">
-          {achievement?.image ? (
+          {form.image ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={achievement.image}
-              alt={achievement.title}
+              src={form.image}
+              alt={form.title || "Event Image"}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -38,6 +39,7 @@ export default function EventPreviewCard({ form, achievements }: Props) {
         </div>
 
         <div className="mt-6 space-y-2 text-sm text-zinc-400">
+          {/* Date */}
           <div className="flex justify-between">
             <span>📅 Date</span>
             <span>
@@ -47,6 +49,25 @@ export default function EventPreviewCard({ form, achievements }: Props) {
             </span>
           </div>
 
+          {/* Time */}
+          <div className="flex justify-between">
+            <span>🕐 Time</span>
+
+            <span>
+              {form.startTime ? (
+                <>
+                  {form.startTime} → {form.endTime || "?"}
+                  <span className="ml-1 text-xs text-zinc-500">
+                    ({getUTCOffset(form.timezone)})
+                  </span>
+                </>
+              ) : (
+                "--"
+              )}
+            </span>
+          </div>
+
+          {/* Participants */}
           <div className="flex justify-between">
             <span>👥 Participants</span>
             <span>{form.maxParticipants || "--"}</span>

@@ -42,7 +42,7 @@ export default function AchievementSummary({ achievement }: Props) {
               Description
             </p>
 
-            <p className="leading-7 whitespace-pre-wrap text-zinc-300">
+            <p className="leading-7 break-all whitespace-pre-wrap text-zinc-300">
               {achievement.description || "-"}
             </p>
           </div>
@@ -52,22 +52,14 @@ export default function AchievementSummary({ achievement }: Props) {
               Metadata
             </p>
 
-            <p className="leading-7 whitespace-pre-wrap text-zinc-300">
+            <p className="leading-7 break-all whitespace-pre-wrap text-zinc-300">
               {achievement.metadata?.note || "-"}
             </p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <p className="text-sm text-zinc-500">Points</p>
-
-            <p className="mt-1 text-lg font-semibold">
-              {achievement.points ?? "-"} pts
-            </p>
-          </div>
-
+        <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <p className="text-sm text-zinc-500">Expiration</p>
 

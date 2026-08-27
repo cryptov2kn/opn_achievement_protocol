@@ -22,36 +22,37 @@ export default function AchievementDetailInfo({ achievement }: Props) {
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <AchievementDetailStat
-          icon="⭐"
-          title="Points"
-          value={achievement.points ?? "-"}
-        />
+      <section className="mt-8 flex flex-wrap justify-center gap-6">
+        <div className="w-full max-w-sm">
+          <AchievementDetailStat
+            icon="🕒"
+            title="Created"
+            value={new Date(achievement.created_at).toLocaleDateString(
+              "en-US",
+              {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              },
+            )}
+          />
+        </div>
 
-        <AchievementDetailStat
-          icon="🕒"
-          title="Created"
-          value={new Date(achievement.created_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        />
-
-        <AchievementDetailStat
-          icon="📅"
-          title="Expiration"
-          value={
-            achievement.expiration
-              ? new Date(achievement.expiration).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "-"
-          }
-        />
+        <div className="w-full max-w-sm">
+          <AchievementDetailStat
+            icon="📅"
+            title="Expiration"
+            value={
+              achievement.expiration
+                ? new Date(achievement.expiration).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "-"
+            }
+          />
+        </div>
       </section>
     </>
   );
